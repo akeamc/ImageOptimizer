@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: imageoptimizer
+spec:
+  selector:
+    matchLabels:
+      app: imageoptimizer
+  template:
+    metadata:
+      labels:
+        app: imageoptimizer
+    spec:
+      containers:
+      - name: imageoptimizer
+        image: registry.lynx.agency/thepiconerd/imageoptimizer:IMAGE_TAG
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always
+      imagePullSecrets:
+        - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: imageoptimizer
+spec:
+  type: NodePort
+  selector:
+    app: imageoptimizer
+  ports:
+  - port: 80
+    targetPort: 80
