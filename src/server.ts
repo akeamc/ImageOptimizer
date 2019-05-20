@@ -1,10 +1,30 @@
 import * as Koa from "koa";
 import * as Router from "koa-router";
 
-import optimize, {optimizations, Optimization, Image} from "./optimize";
+import optimize, { optimizations, Optimization, Image } from "./optimize";
 
 const server = new Koa();
 const router = new Router();
+
+server.use(async (ctx: Koa.Context, next: any) => {
+  try {
+    await next();
+    const status = ctx.status || 404;
+    if (status === 404) {
+      ctx.throw(404);
+    }
+  } catch (err) {
+    ctx.status = err.status || 500;
+    if (ctx.status === 404) {
+      ctx.body = {
+        message: "Page not found",
+        request: `${ctx.method} ${ctx.path}`
+      };
+    } else {
+      ctx.body = "Internal server error";
+    }
+  }
+});
 
 router.get("/webp/:source", async ctx => {
   await optimizeMiddleware(ctx, optimizations.webp);
