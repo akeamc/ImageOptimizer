@@ -5,17 +5,26 @@ import { Stream } from "stream";
 
 import * as sharp from "sharp";
 
-let cachedir = path.join(__dirname, "..", "cache");
+let cachedir = path.join(process.cwd(), "cache");
 fs.mkdirpSync(cachedir);
 
 let originaldir = path.join(cachedir, "original");
 fs.mkdirpSync(originaldir);
+
+let datadir = path.join(cachedir, "data");
+fs.mkdirpSync(datadir);
+
+function unixTimestamp(): number {
+  return (new Date().getTime() / 1000) | 0;
+}
 
 export class Image {
   originalURL: string;
   stream: Stream;
   optimization: Optimization;
   location: string;
+  name: string;
+  cachedata: string;
 
   constructor({
     originalURL,
@@ -26,26 +35,40 @@ export class Image {
   }) {
     this.originalURL = originalURL;
     this.optimization = optimization;
+    this.name = encodeURIComponent(originalURL);
     this.location = getPath(optimization.dir, originalURL);
+    this.cachedata = getPath(optimization.datadir, originalURL);
   }
 
-  optimize() {
-    let original: Stream = getCached(this.originalURL);
+  optimize(): Stream {
+    if (fs.existsSync(this.cachedata)) {
+      let cachedata = fs.readFileSync(this.cachedata, "utf8");
 
-    let optimized: Stream;
-
-    if (fs.existsSync(this.location)) {
-      optimized = fs.createReadStream(this.location);
+      if (
+        unixTimestamp() - parseInt(cachedata, 10) < 86400 &&
+        fs.existsSync(this.location)
+      ) {
+        this.stream = fs.createReadStream(this.location);
+      } else {
+        this.renew();
+      }
     } else {
-      optimized = original.pipe(this.optimization.pipeline);
-      optimized
-        .pipe(new Stream.PassThrough())
-        .pipe(fs.createWriteStream(this.location));
+      this.renew();
     }
 
-    this.stream = optimized;
-
     return this.stream;
+  }
+
+  renew(): Stream {
+    let original: Stream = getCached(this.originalURL);
+    let optimized: Stream;
+    optimized = original.pipe(this.optimization.pipeline);
+    optimized
+      .pipe(new Stream.PassThrough())
+      .pipe(fs.createWriteStream(this.location));
+    fs.writeFileSync(this.cachedata, unixTimestamp()); // UNIX timestamp
+    this.stream = optimized;
+    return optimized;
   }
 }
 
@@ -54,6 +77,7 @@ export class Optimization {
   contentType: string;
   name: string;
   dir: string;
+  datadir: string;
 
   constructor({
     pipeline,
@@ -68,12 +92,14 @@ export class Optimization {
     this.contentType = contentType;
     this.name = name;
     this.dir = path.join(cachedir, name);
+    this.datadir = path.join(datadir, name);
     fs.mkdirpSync(this.dir);
+    fs.mkdirpSync(this.datadir);
   }
 }
 
 export const optimizations = {
-  "jpeg": new Optimization({
+  jpeg: new Optimization({
     pipeline: sharp().jpeg({
       quality: 30
     }),
@@ -81,15 +107,17 @@ export const optimizations = {
     name: "jpeg"
   }),
   "jpeg-400": new Optimization({
-    pipeline: sharp().jpeg({
-      quality: 30
-    }).resize(400, null, {
-      withoutEnlargement: true
-    }),
+    pipeline: sharp()
+      .jpeg({
+        quality: 30
+      })
+      .resize(400, null, {
+        withoutEnlargement: true
+      }),
     contentType: "image/jpeg",
     name: "jpeg-400"
   }),
-  "webp": new Optimization({
+  webp: new Optimization({
     pipeline: sharp().webp({
       quality: 30
     }),
@@ -97,17 +125,22 @@ export const optimizations = {
     name: "webp"
   }),
   "webp-400": new Optimization({
-    pipeline: sharp().webp({
-      quality: 50
-    }).resize(400, null, {
-      withoutEnlargement: true
-    }),
+    pipeline: sharp()
+      .webp({
+        quality: 50
+      })
+      .resize(400, null, {
+        withoutEnlargement: true
+      }),
     contentType: "image/webp",
     name: "webp-400"
-  }),
+  })
 };
 
-export default function optimize(url: string, optimization: Optimization = optimizations.jpeg): Image {
+export default function optimize(
+  url: string,
+  optimization: Optimization = optimizations.jpeg
+): Image {
   let image = new Image({
     optimization,
     originalURL: url

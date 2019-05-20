@@ -21,6 +21,7 @@ server.use(async (ctx: Koa.Context, next: any) => {
         request: `${ctx.method} ${ctx.path}`
       };
     } else {
+      console.log(err);
       ctx.body = "Internal server error";
     }
   }

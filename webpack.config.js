@@ -4,6 +4,9 @@ module.exports = {
   entry: "./src/server.ts",
   mode: NODE_ENV,
   target: "node",
+  node: {
+    __dirname: true
+  },
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "server.js"

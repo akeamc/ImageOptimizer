@@ -12,13 +12,19 @@ spec:
         app: imageoptimizer
     spec:
       containers:
-      - name: imageoptimizer
-        image: registry.lynx.agency/thepiconerd/imageoptimizer:IMAGE_TAG
-        ports:
-        - containerPort: 80
-        imagePullPolicy: Always
-      imagePullSecrets:
-        - name: regcred
+        - name: imageoptimizer
+          image: registry.lynx.agency/thepiconerd/imageoptimizer:IMAGE_TAG
+          ports:
+            - containerPort: 80
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /usr/src/app/cache
+              name: cache
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: cache-pvc
+
 ---
 apiVersion: v1
 kind: Service
@@ -29,5 +35,17 @@ spec:
   selector:
     app: imageoptimizer
   ports:
-  - port: 80
-    targetPort: 80
+    - port: 80
+      targetPort: 80
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: cache-pvc
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
