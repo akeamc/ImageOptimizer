@@ -32,7 +32,7 @@ function optimizeMiddleware(ctx: Koa.Context, optimization: Optimization) {
 server.use(router.routes());
 server.use(router.allowedMethods());
 
-const port = 8080;
+const port = process.env.PORT || 8080;
 
 server.listen(port, () => {
   console.log(`http://localhost:${port}`);
