@@ -12,6 +12,6 @@ jobs:
     - uses: actions/checkout@v1
     - name: Build the Docker image
       run: |
-        printenv
+        git status
         git describe --tags
         docker build . -t docker.pkg.github.com/thepiconerd/imageoptimizer/imageoptimizer:$(git describe --tags)
