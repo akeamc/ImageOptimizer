@@ -13,4 +13,5 @@ jobs:
     - name: Build the Docker image
       run: |
         printenv
-        docker build . -t docker.pkg.github.com/thepiconerd/imageoptimizer/imageoptimizer:latest
+        git describe --tags
+        docker build . -t docker.pkg.github.com/thepiconerd/imageoptimizer/imageoptimizer:$(git describe --tags)
