@@ -2,6 +2,9 @@ name: Docker Image CI
 
 on: [push]
 
+# git describe --tags
+# docker build . -t docker.pkg.github.com/thepiconerd/imageoptimizer/imageoptimizer:$(git describe --tags)
+
 jobs:
 
   build:
@@ -13,5 +16,5 @@ jobs:
     - name: Build the Docker image
       run: |
         git status
-        git describe --tags
-        docker build . -t docker.pkg.github.com/thepiconerd/imageoptimizer/imageoptimizer:$(git describe --tags)
+        docker build . -t docker.pkg.github.com/thepiconerd/imageoptimizer/imageoptimizer:latest
+        docker push docker.pkg.github.com/thepiconerd/imageoptimizer/imageoptimizer
