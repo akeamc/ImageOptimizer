@@ -1,0 +1,20 @@
+name: Docker Image CI
+
+on: [push]
+
+# git describe --tags
+# docker build . -t docker.pkg.github.com/thepiconerd/imageoptimizer/imageoptimizer:$(git describe --tags)
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build the Docker image
+      run: |
+        git status
+        docker build . -t docker.pkg.github.com/thepiconerd/imageoptimizer/imageoptimizer:latest
+        docker push docker.pkg.github.com/thepiconerd/imageoptimizer/imageoptimizer
